@@ -1,18 +1,16 @@
 import os
 from datetime import datetime, timedelta
 from googleapiclient.discovery import build
-from supabase import create_client
 from ai_client import ask_ai_json
+from db_client import supabase
 
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 
 def get_current_week_topic():
     """
     Determines this week's topic from the 21-week roadmap.
-    For now, uses a simple week-number calculation from a fixed start date -
-    this should be refined once the actual roadmap start date is confirmed.
+    Placeholder: week 1. Replace with real week-tracking logic once confirmed.
     """
     ROADMAP = {
         1: "Linux command line basics file system permissions",
@@ -37,7 +35,6 @@ def get_current_week_topic():
         20: "System Design and IDP Backstage concepts",
         21: "Resume ATS and Interview Practice",
     }
-    # Placeholder: week 1. Replace with real week-tracking logic once confirmed.
     week_number = 1
     topic = ROADMAP.get(week_number, "DevOps fundamentals")
     return week_number, topic
@@ -69,21 +66,6 @@ def search_youtube_candidates(topic: str, max_results: int = 10) -> list:
     return candidates
 
 
-def get_video_stats(video_ids: list) -> dict:
-    """Fetches duration and stats for scoring - NOT used for popularity bias, only duration/recency."""
-    request = youtube.videos().list(
-        part="contentDetails,statistics",
-        id=",".join(video_ids)
-    )
-    response = request.execute()
-    stats = {}
-    for item in response.get("items", []):
-        stats[item["id"]] = {
-            "duration": item["contentDetails"]["duration"],
-        }
-    return stats
-
-
 def get_last_week_channel() -> str:
     """Checks weekly_plan for last week's selected channel, for continuity scoring."""
     result = supabase.table("weekly_plan").select("*").order("created_at", desc=True).limit(1).execute()
@@ -91,11 +73,12 @@ def get_last_week_channel() -> str:
         return result.data[0].get("channel_id")
     return None
 
+
 def score_candidate(candidate: dict, topic: str, last_week_channel: str) -> dict:
     """
     Scores a single video candidate using AI reasoning - hands-on quality and
-    engagement/narrative quality weighted highest, relevance floor, recency,
-    duration. NO popularity metrics (views/likes) used at all.
+    engagement/narrative quality weighted highest, relevance floor, recency.
+    NO popularity metrics (views/likes) used at all.
     """
     prompt = f"""
 Evaluate this YouTube video as a candidate for a DevOps/Platform Engineer interview-prep learning video.
@@ -132,6 +115,31 @@ Return JSON:
     return ask_ai_json(prompt)
 
 
+def extract_timestamp_range(description: str, topic: str) -> dict:
+    """
+    Checks if the video description contains chapter timestamps, and if so,
+    identifies which range covers the topic. Falls back to full video if no
+    usable timestamps exist in the description.
+    """
+    prompt = f"""
+This is a YouTube video description. Check if it contains chapter timestamps (like "0:00 Intro", "2:15 Topic Name").
+
+Topic to find: {topic}
+Description: {description[:1000]}
+
+If timestamps exist AND one clearly covers this topic, return that range.
+If no timestamps exist, or none clearly match, return start "0:00:00" and end null (meaning use full video).
+
+Return JSON:
+{{
+  "has_timestamps": false,
+  "start_time": "0:00:00",
+  "end_time": null
+}}
+"""
+    return ask_ai_json(prompt)
+
+
 def pick_best_video(topic: str) -> dict:
     """Full pipeline: search, score, apply continuity bonus, pick winner."""
     candidates = search_youtube_candidates(topic)
@@ -144,7 +152,6 @@ def pick_best_video(topic: str) -> dict:
         if score_result.get("reject", False):
             continue
 
-        # Hands-on and engagement weighted highest (per original design)
         total_score = (
             score_result.get("hands_on", 0) * 2 +
             score_result.get("engagement_quality", 0) * 2 +
@@ -152,7 +159,6 @@ def pick_best_video(topic: str) -> dict:
             score_result.get("recency", 0) * 1
         )
 
-        # Continuity bonus - not a hard rule, just a tie-breaker boost
         if last_week_channel and candidate["channel_id"] == last_week_channel:
             total_score += 3
 
@@ -166,7 +172,7 @@ def pick_best_video(topic: str) -> dict:
 
 
 def run_video_select():
-    """Entry point - picks this week's video and saves it to weekly_plan."""
+    """Entry point - picks this week's video, determines timing, saves to weekly_plan."""
     week_number, topic = get_current_week_topic()
     winner = pick_best_video(topic)
 
@@ -174,15 +180,19 @@ def run_video_select():
         print(f"[video_select] No suitable video found for week {week_number}: {topic}")
         return None
 
+    timing = extract_timestamp_range(winner.get("description", ""), topic)
+
     supabase.table("weekly_plan").insert({
         "week_number": week_number,
         "day_of_week": "Monday",
         "topic": topic,
         "video_url": f"https://youtube.com/watch?v={winner['video_id']}",
+        "video_start_time": timing.get("start_time", "0:00:00"),
+        "video_end_time": timing.get("end_time"),
         "channel_id": winner["channel_id"],
         "channel_name": winner["channel_name"],
         "status": "selected"
     }).execute()
 
-    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}")
+    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, timing: {timing.get('start_time')}-{timing.get('end_time')}")
     return winner

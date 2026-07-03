@@ -36,8 +36,8 @@ def get_today_job_scan_status() -> dict:
     result = supabase.table("jobs").select("*").gte("found_at", today_start).execute()
 
     if not result.data:
-        return {"status": "not run / no new matches", "detail": ""}
-
+        return {"status": "✅ ran, no new matches found", "detail": ""}
+    
     surfaced = [r for r in result.data if r.get("surfaced")]
     if surfaced:
         return {"status": f"✅ {len(surfaced)} new match(es)", "detail": ", ".join([f"{r['company']}" for r in surfaced[:3]])}

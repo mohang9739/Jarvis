@@ -66,6 +66,29 @@ def search_youtube_candidates(topic: str, max_results: int = 10) -> list:
     return candidates
 
 
+def get_video_durations(video_ids: list) -> dict:
+    """
+    Fetches each video's duration in seconds - used only for sensible
+    watch-plan reasoning (splitting long videos), NEVER for popularity bias.
+    """
+    import re
+    request = youtube.videos().list(
+        part="contentDetails",
+        id=",".join(video_ids)
+    )
+    response = request.execute()
+
+    durations = {}
+    for item in response.get("items", []):
+        iso_duration = item["contentDetails"]["duration"]
+        match = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", iso_duration)
+        hours = int(match.group(1) or 0)
+        minutes = int(match.group(2) or 0)
+        seconds = int(match.group(3) or 0)
+        durations[item["id"]] = hours * 3600 + minutes * 60 + seconds
+    return durations
+
+
 def get_last_week_channel() -> str:
     """Checks weekly_plan for last week's selected channel, for continuity scoring."""
     result = supabase.table("weekly_plan").select("*").order("created_at", desc=True).limit(1).execute()
@@ -115,26 +138,37 @@ Return JSON:
     return ask_ai_json(prompt)
 
 
-def extract_timestamp_range(description: str, topic: str) -> dict:
+def extract_timestamp_range(description: str, topic: str, duration_seconds: int = None) -> dict:
     """
     Checks if the video description contains chapter timestamps, and if so,
-    identifies which range covers the topic. Falls back to full video if no
-    usable timestamps exist in the description.
+    identifies which range covers the topic. If no timestamps exist, reasons
+    about the video's total duration to suggest a sensible watch plan -
+    either "watch fully today" for a reasonably short video, or a suggested
+    split across multiple days for a genuinely long one - rather than just
+    defaulting to "watch everything, no guidance."
     """
+    duration_note = f"Video duration: approximately {duration_seconds // 60} minutes." if duration_seconds else "Video duration unknown."
+
     prompt = f"""
 This is a YouTube video description. Check if it contains chapter timestamps (like "0:00 Intro", "2:15 Topic Name").
 
 Topic to find: {topic}
 Description: {description[:1000]}
+{duration_note}
 
-If timestamps exist AND one clearly covers this topic, return that range.
-If no timestamps exist, or none clearly match, return start "0:00:00" and end null (meaning use full video).
+If timestamps exist AND one clearly covers this topic, return that exact range.
+
+If NO usable timestamps exist, reason about the video's duration instead:
+- If it's a reasonably short video (under ~35 minutes), suggest watching it fully in one sitting today.
+- If it's genuinely long (35+ minutes) with no chapters to guide a shorter segment, suggest a sensible
+  split across 2-3 days instead of forcing the whole thing into one sitting - note this in "split_suggestion".
 
 Return JSON:
 {{
   "has_timestamps": false,
   "start_time": "0:00:00",
-  "end_time": null
+  "end_time": null,
+  "split_suggestion": null
 }}
 """
     return ask_ai_json(prompt)
@@ -180,7 +214,10 @@ def run_video_select():
         print(f"[video_select] No suitable video found for week {week_number}: {topic}")
         return None
 
-    timing = extract_timestamp_range(winner.get("description", ""), topic)
+    durations = get_video_durations([winner["video_id"]])
+    duration_seconds = durations.get(winner["video_id"])
+
+    timing = extract_timestamp_range(winner.get("description", ""), topic, duration_seconds)
 
     supabase.table("weekly_plan").insert({
         "week_number": week_number,
@@ -194,5 +231,6 @@ def run_video_select():
         "status": "selected"
     }).execute()
 
-    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, timing: {timing.get('start_time')}-{timing.get('end_time')}")
+    split_note = f" | {timing.get('split_suggestion')}" if timing.get("split_suggestion") else ""
+    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
     return winner

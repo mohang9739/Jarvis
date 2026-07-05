@@ -15,12 +15,6 @@ def get_current_week_topic():
     were genuinely cleared (average score >= 7/10). If either gate fails,
     repeats the SAME week's topic - reinforcing weak material instead of
     advancing to new content on a shaky foundation.
-
-    Uses AI-based topic matching for the quiz gate, since scores.topic and
-    the roadmap's topic text are independently worded (e.g. "Linux file
-    permissions (chmod)" vs "Linux command line basics file system
-    permissions" - same real subject, different exact text) - exact string
-    matching would incorrectly show quiz_passed=False even for a real pass.
     """
     ROADMAP = {
         1: "Linux command line basics file system permissions",
@@ -54,8 +48,6 @@ def get_current_week_topic():
     last_week_number = existing.data[0]["week_number"]
     last_week_topic = existing.data[0]["topic"]
 
-    # GATE 1: check if last week's quiz was genuinely passed, using AI to match
-    # topic strings that refer to the same real subject but are worded differently
     quiz_passed = False
     recent_scores = supabase.table("scores").select("*").order("created_at", desc=True).limit(5).execute()
     for score_row in recent_scores.data:
@@ -70,7 +62,6 @@ def get_current_week_topic():
             quiz_passed = score_row.get("passed", False)
             break
 
-    # GATE 2: check if last week's interview questions were genuinely cleared (average score >= 7/10)
     interview_result = supabase.table("interview_sessions").select("score").eq("topic", last_week_topic).execute()
     interview_scores = [row["score"] for row in interview_result.data if row.get("score") is not None]
     interview_cleared = (sum(interview_scores) / len(interview_scores) >= 7) if interview_scores else False
@@ -144,9 +135,11 @@ def get_last_week_channel() -> str:
 
 def score_candidate(candidate: dict, topic: str, last_week_channel: str) -> dict:
     """
-    Scores a single video candidate using AI reasoning - hands-on quality and
-    engagement/narrative quality weighted highest, relevance floor, recency.
-    NO popularity metrics (views/likes) used at all.
+    Scores a single video candidate using AI reasoning. pbc_depth is the
+    highest-weighted criterion - checks whether the video's content plausibly
+    goes deep enough for real product-based-company interview questions
+    (the "why", not just the "what"), not just clarity/hands-on quality for
+    beginners. NO popularity metrics (views/likes) used at all.
     """
     prompt = f"""
 Evaluate this YouTube video as a candidate for a DevOps/Platform Engineer interview-prep learning video.
@@ -163,6 +156,13 @@ Score on these criteria (each 1-10):
 - engagement_quality: does this sound genuinely well-explained and engaging based on title/description,
   not clickbait
 - recency: how recent is this, given DevOps tooling changes over time (recent = higher score)
+- pbc_depth: this is CRITICAL - based on the title/description, does this video's content plausibly go
+  deep enough to prepare someone for real Platform Engineer/DevOps interview questions at product-based
+  companies (Razorpay, Swiggy, PhonePe, etc.)? These interviews probe WHY, not just WHAT - e.g. not just
+  "chmod 755 means X" but "why would you choose 755 over 750 for this specific service, what are the
+  security tradeoffs, how does this behave differently in a container vs a VM." A video that only covers
+  basic command syntax without touching real production reasoning, edge cases, or "why" explanations
+  should score LOW on this criterion, even if it's clear and well-taught for beginners.
 
 Do NOT consider view counts, likes, or subscriber counts - none of that data is provided or relevant.
 
@@ -175,6 +175,7 @@ Return JSON:
   "hands_on": 8,
   "engagement_quality": 7,
   "recency": 6,
+  "pbc_depth": 6,
   "match_type": "full",
   "reject": false,
   "reject_reason": null
@@ -229,8 +230,9 @@ def pick_best_video(topic: str) -> dict:
             continue
 
         total_score = (
+            score_result.get("pbc_depth", 0) * 2.5 +
             score_result.get("hands_on", 0) * 2 +
-            score_result.get("engagement_quality", 0) * 2 +
+            score_result.get("engagement_quality", 0) * 1.5 +
             score_result.get("relevance", 0) * 1.5 +
             score_result.get("recency", 0) * 1
         )
@@ -238,7 +240,7 @@ def pick_best_video(topic: str) -> dict:
         if last_week_channel and candidate["channel_id"] == last_week_channel:
             total_score += 3
 
-        scored.append({**candidate, "score": total_score, "match_type": score_result.get("match_type")})
+        scored.append({**candidate, "score": total_score, "match_type": score_result.get("match_type"), "pbc_depth": score_result.get("pbc_depth")})
 
     if not scored:
         return None
@@ -274,5 +276,5 @@ def run_video_select():
     }).execute()
 
     split_note = f" | {timing.get('split_suggestion')}" if timing.get("split_suggestion") else ""
-    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
+    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
     return winner

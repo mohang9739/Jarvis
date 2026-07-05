@@ -4,9 +4,10 @@ from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from video_select import run_video_select
+from video_select import run_video_select, get_current_week_topic
 from job_scan import run_job_scan
 from reporter import run_reporter
+from interview_engine import run_weekly_interview_set
 from health_engine import get_current_shift, get_today_study_status
 
 
@@ -14,6 +15,7 @@ def get_module_status_summary() -> dict:
     """Tracks which modules ran successfully today, for health visibility in the report."""
     return {
         "video_select": {"ran": False, "error": None},
+        "interview_set": {"ran": False, "error": None},
         "job_scan": {"ran": False, "error": None},
         "reporter": {"ran": False, "error": None},
     }
@@ -23,7 +25,6 @@ def should_delay_report(shift: str, study_status: str) -> bool:
     """
     Determines if the report should be delayed rather than posted immediately -
     e.g. don't post a 'time to study' nudge during someone's actual sleep window.
-    Returns True if this is a bad time to post, False if it's fine to proceed.
     Currently used for logging/detection only - real delay scheduling comes
     with EventBridge during deployment.
     """
@@ -62,18 +63,30 @@ def run_daily_orchestration():
     if should_delay_report(shift, study_status):
         print(f"[orchestrator] Current time falls in {shift} shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.")
 
-    # --- Video Select: Monday only ---
+    # --- Video Select + Interview Set: Monday only, same topic for both ---
     if is_monday:
         try:
-            run_video_select()
+            video_result = run_video_select()
             status["video_select"]["ran"] = True
+
+            # Generate this week's interview set for the SAME topic Video Select just picked,
+            # so questions genuinely match each week's real, current topic, not a stale one.
+            if video_result:
+                try:
+                    week_number, topic = get_current_week_topic()
+                    run_weekly_interview_set(week_number, topic)
+                    status["interview_set"]["ran"] = True
+                    print(f"[orchestrator] Interview set generated for week {week_number}: {topic}")
+                except Exception as interview_error:
+                    status["interview_set"]["error"] = str(interview_error)
+                    print(f"[orchestrator] Interview set generation failed: {interview_error}")
         except Exception as e:
             status["video_select"]["error"] = str(e)
             print(f"[orchestrator] Video Select failed: {e}")
     else:
-        print("[orchestrator] Skipping Video Select - not Monday")
+        print("[orchestrator] Skipping Video Select and Interview Set - not Monday")
 
-    # --- Job Scan: runs daily, internally gates surfacing based on readiness ---
+    # --- Job Scan: runs daily, but internally gates surfacing based on readiness ---
     try:
         run_job_scan()
         status["job_scan"]["ran"] = True

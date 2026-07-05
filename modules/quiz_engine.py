@@ -68,7 +68,7 @@ def get_todays_topic() -> dict:
     from datetime import datetime, timedelta
     now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
     today = now_ist.strftime("%A")
-    result = supabase.table("weekly_plan").select("*").eq("day_of_week", today).execute()
+    result = supabase.table("weekly_plan").select("*").eq("day_of_week", today).order("created_at", desc=True).limit(1).execute()
     if not result.data:
         raise ValueError(f"No topic found for {today} in weekly_plan.")
     return result.data[0]

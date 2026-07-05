@@ -10,13 +10,10 @@ youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 def get_current_week_topic():
     """
     Determines the current week's topic from the 20-week roadmap, organized
-    into 5 milestones. Message Queues folded into AWS Fundamentals/Networking
-    rather than given a standalone week, matching verified source material.
-
-    Uses REAL data with a genuine readiness gate: only advances to the next
-    week if last week's quiz was passed AND last week's interview questions
-    were genuinely cleared (average score >= 7/10). If either gate fails,
-    repeats the SAME week's topic.
+    into 5 milestones. Uses REAL data with a genuine readiness gate: only
+    advances to the next week if last week's quiz was passed AND last week's
+    interview questions were genuinely cleared (average score >= 7/10). If
+    either gate fails, repeats the SAME week's topic.
     """
     ROADMAP = {
         1: "Linux Basics - commands, file system navigation, permissions, and processes",
@@ -106,9 +103,8 @@ def search_youtube_candidates(topic: str, max_results: int = 10) -> list:
 def get_video_durations(video_ids: list) -> dict:
     """
     Fetches each video's duration in seconds. Used both as a scoring input
-    (cross-checking claimed scope against actual runtime, in score_candidate)
-    and for the separate watch-plan/timestamp feature. NEVER used for
-    popularity bias.
+    (cross-checking claimed scope against actual runtime) and for the
+    watch-plan/timestamp feature. NEVER used for popularity bias.
     """
     import re
     request = youtube.videos().list(
@@ -139,16 +135,9 @@ def get_last_week_channel() -> str:
 def score_candidate(candidate: dict, topic: str, last_week_channel: str, duration_seconds: int = None) -> dict:
     """
     Scores a single video candidate using AI reasoning. pbc_depth is the
-    highest-weighted criterion - checks whether the video's content plausibly
-    goes deep enough for real product-based-company interview questions
-    (the "why", not just the "what"). Duration is now factored in explicitly,
-    since a video claiming to cover "everything from basic to advanced" in
-    just a few minutes cannot genuinely deliver that depth, regardless of how
-    confident the title sounds - this was a real gap where duration existed
-    in the pipeline but was never used as a scoring input (caught via a real
-    example: a 9-minute "Complete Containerization Tutorial" claiming to
-    cover basic through advanced multi-stage builds). NO popularity metrics
-    used at all.
+    highest-weighted criterion. Duration is factored in explicitly, since a
+    video claiming broad coverage in too little runtime cannot genuinely
+    deliver that depth. NO popularity metrics used at all.
     """
     duration_note = f"Video duration: {duration_seconds // 60} minutes." if duration_seconds else "Video duration: unknown."
 
@@ -176,10 +165,8 @@ Score on these criteria (each 1-10):
 - recency: how recent is this, given DevOps tooling changes over time (recent = higher score)
 - pbc_depth: this is CRITICAL - based on the title/description AND the actual duration above, does this
   video's content plausibly go deep enough to prepare someone for real Platform Engineer/DevOps interview
-  questions at product-based companies (Razorpay, Swiggy, PhonePe, etc.)? These interviews probe WHY, not
-  just WHAT. A video that only covers basic command syntax, OR that claims broad/comprehensive scope but
-  has too little runtime to actually deliver it, should score LOW on this criterion - even if the title
-  sounds impressive or the video is otherwise clear and well-taught for beginners.
+  questions at product-based companies (Razorpay, Swiggy, PhonePe, etc.)? A video that only covers basic
+  command syntax, OR that claims broad scope but has too little runtime to deliver it, should score LOW.
 
 Do NOT consider view counts, likes, or subscriber counts - none of that data is provided or relevant.
 
@@ -236,12 +223,8 @@ Return JSON:
 
 def pick_best_video(topic: str) -> dict:
     """
-    Full pipeline: search, fetch REAL durations for ALL candidates up front
-    (not just the eventual winner), score with duration as an input, apply
-    continuity bonus, pick winner. Fetching duration for all candidates
-    before scoring - not just the winner afterward - is the actual fix for
-    the gap where an ambitiously-worded but too-short video could score
-    artificially high on depth.
+    Full pipeline: search, fetch REAL durations for ALL candidates up front,
+    score with duration as an input, apply continuity bonus, pick winner.
     """
     candidates = search_youtube_candidates(topic)
     last_week_channel = get_last_week_channel()
@@ -287,29 +270,51 @@ def pick_best_video(topic: str) -> dict:
 
 
 def run_video_select():
-    """Entry point - picks this week's video, determines timing, saves to weekly_plan."""
+    """
+    Entry point - picks this week's video(s), determines timing, saves to
+    weekly_plan. Weeks consolidated from two originally-separate topics
+    (Docker=13, Kubernetes=14, CI/CD=16) genuinely need TWO videos, not one -
+    a single video sized for one topic can't cover a combined week's full
+    real scope. For these weeks, splits into two focused sub-topic searches
+    and picks a winner for each; all other weeks get one video as before.
+    """
+    BROAD_WEEKS_SUB_TOPICS = {
+        13: ["Docker basics fundamentals containers images", "Docker advanced multi-stage builds image optimization"],
+        14: ["Kubernetes basics pods deployments services", "Kubernetes advanced autoscaling ingress production configuration"],
+        16: ["Jenkins CI/CD pipeline fundamentals", "GitHub Actions CI/CD automation workflows"],
+    }
+
     week_number, topic = get_current_week_topic()
-    winner = pick_best_video(topic)
 
-    if not winner:
-        print(f"[video_select] No suitable video found for week {week_number}: {topic}")
-        return None
+    sub_topics = BROAD_WEEKS_SUB_TOPICS.get(week_number)
+    topics_to_search = sub_topics if sub_topics else [topic]
 
-    duration_seconds = winner.get("duration_seconds")
-    timing = extract_timestamp_range(winner.get("description", ""), topic, duration_seconds)
+    saved_videos = []
+    for i, search_topic in enumerate(topics_to_search):
+        winner = pick_best_video(search_topic)
 
-    supabase.table("weekly_plan").insert({
-        "week_number": week_number,
-        "day_of_week": "Monday",
-        "topic": topic,
-        "video_url": f"https://youtube.com/watch?v={winner['video_id']}",
-        "video_start_time": timing.get("start_time", "0:00:00"),
-        "video_end_time": timing.get("end_time"),
-        "channel_id": winner["channel_id"],
-        "channel_name": winner["channel_name"],
-        "status": "selected"
-    }).execute()
+        if not winner:
+            print(f"[video_select] No suitable video found for week {week_number} (part {i+1}): {search_topic}")
+            continue
 
-    split_note = f" | {timing.get('split_suggestion')}" if timing.get("split_suggestion") else ""
-    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, duration: {duration_seconds}s, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
-    return winner
+        duration_seconds = winner.get("duration_seconds")
+        timing = extract_timestamp_range(winner.get("description", ""), search_topic, duration_seconds)
+
+        supabase.table("weekly_plan").insert({
+            "week_number": week_number,
+            "day_of_week": "Monday",
+            "topic": search_topic if len(topics_to_search) > 1 else topic,
+            "video_url": f"https://youtube.com/watch?v={winner['video_id']}",
+            "video_start_time": timing.get("start_time", "0:00:00"),
+            "video_end_time": timing.get("end_time"),
+            "channel_id": winner["channel_id"],
+            "channel_name": winner["channel_name"],
+            "status": "selected"
+        }).execute()
+
+        split_note = f" | {timing.get('split_suggestion')}" if timing.get("split_suggestion") else ""
+        part_label = f" (part {i+1}/{len(topics_to_search)})" if len(topics_to_search) > 1 else ""
+        print(f"[video_select] Selected{part_label}: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, duration: {duration_seconds}s, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
+        saved_videos.append(winner)
+
+    return saved_videos

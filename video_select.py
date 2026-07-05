@@ -9,33 +9,47 @@ youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 def get_current_week_topic():
     """
-    Determines the current week's topic from the 21-week roadmap.
+    Determines the current week's topic from the 21-week roadmap, organized
+    into 5 milestones (Core Engine, Scripting & DevEx, Cloud & Infrastructure,
+    Cloud-Native, Production-Ready). Restructured based on verified real-world
+    evidence: AI tooling moved earlier (Wk8) to accelerate later learning,
+    CI/CD consolidated toward GitHub Actions per confirmed 2026 industry
+    trend data, Databases/Caching folded into infrastructure work rather than
+    given dedicated weeks (no verified evidence they're dedicated interview
+    topics at target companies, per the "only add if genuinely PBC-relevant"
+    principle).
+
     Uses REAL data with a genuine readiness gate: only advances to the next
     week if last week's quiz was passed AND last week's interview questions
     were genuinely cleared (average score >= 7/10). If either gate fails,
     repeats the SAME week's topic - reinforcing weak material instead of
-    advancing to new content on a shaky foundation.
+    advancing on a shaky foundation.
     """
     ROADMAP = {
-        1: "Linux command line basics file system permissions",
-        2: "Bash scripting fundamentals",
-        3: "Networking fundamentals TCP IP DNS",
-        4: "Git version control fundamentals",
-        5: "Python Basics",
-        6: "DevOps for Python",
-        7: "Python for API",
-        8: "AWS fundamentals",
-        9: "Docker Basics",
-        10: "Advanced Docker",
-        11: "Jenkins",
-        12: "GitHub Actions",
+        # Milestone 1: Core Engine (Wk1-5)
+        1: "Linux Basics - commands, file system navigation, permissions, and processes",
+        2: "Linux Service Management - systemd, journalctl, process supervision",
+        3: "Bash scripting fundamentals",
+        4: "Networking fundamentals - TCP/IP, DNS resolution, OSI layers",
+        5: "Git version control fundamentals",
+        # Milestone 2: Scripting & DevEx Layer (Wk6-9)
+        6: "Python Basics",
+        7: "DevOps for Python - automation scripting, testing, and packaging",
+        8: "AI Tools for DevOps - Copilot, Cursor, CLI agents to accelerate infra-as-code and scripting work",
+        9: "Python for API - FastAPI, REST endpoint design",
+        # Milestone 3: Cloud & Infrastructure (Wk10-13)
+        10: "AWS fundamentals",
+        11: "AWS Networking - VPC, subnets, security groups, NAT gateways, routing",
+        12: "Message Queues - SQS, Kafka fundamentals for distributed systems",
         13: "Terraform Basic to Advanced",
-        14: "Kubernetes Basics",
-        15: "Advanced Kubernetes",
+        # Milestone 4: Cloud-Native (Wk14-16)
+        14: "Docker - basics through advanced multi-stage builds and image optimization",
+        15: "Kubernetes - basics through advanced (pods, deployments, services, ingress, autoscaling)",
         16: "GitOps ArgoCD Helm",
-        17: "Observability Prometheus Grafana",
-        18: "DevSecOps",
-        19: "AI for DevOps",
+        # Milestone 5: Production-Ready Platform Engineering (Wk17-21)
+        17: "CI/CD - Jenkins fundamentals and GitHub Actions (Actions-first emphasis per current industry trend)",
+        18: "Observability - Prometheus Grafana",
+        19: "DevSecOps",
         20: "System Design and IDP Backstage concepts",
         21: "Resume ATS and Interview Practice",
     }
@@ -138,8 +152,7 @@ def score_candidate(candidate: dict, topic: str, last_week_channel: str) -> dict
     Scores a single video candidate using AI reasoning. pbc_depth is the
     highest-weighted criterion - checks whether the video's content plausibly
     goes deep enough for real product-based-company interview questions
-    (the "why", not just the "what"), not just clarity/hands-on quality for
-    beginners. NO popularity metrics (views/likes) used at all.
+    (the "why", not just the "what"). NO popularity metrics used at all.
     """
     prompt = f"""
 Evaluate this YouTube video as a candidate for a DevOps/Platform Engineer interview-prep learning video.
@@ -158,11 +171,9 @@ Score on these criteria (each 1-10):
 - recency: how recent is this, given DevOps tooling changes over time (recent = higher score)
 - pbc_depth: this is CRITICAL - based on the title/description, does this video's content plausibly go
   deep enough to prepare someone for real Platform Engineer/DevOps interview questions at product-based
-  companies (Razorpay, Swiggy, PhonePe, etc.)? These interviews probe WHY, not just WHAT - e.g. not just
-  "chmod 755 means X" but "why would you choose 755 over 750 for this specific service, what are the
-  security tradeoffs, how does this behave differently in a container vs a VM." A video that only covers
-  basic command syntax without touching real production reasoning, edge cases, or "why" explanations
-  should score LOW on this criterion, even if it's clear and well-taught for beginners.
+  companies (Razorpay, Swiggy, PhonePe, etc.)? These interviews probe WHY, not just WHAT. A video that
+  only covers basic command syntax without touching real production reasoning, edge cases, or "why"
+  explanations should score LOW on this criterion, even if it's clear and well-taught for beginners.
 
 Do NOT consider view counts, likes, or subscriber counts - none of that data is provided or relevant.
 

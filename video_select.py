@@ -11,9 +11,7 @@ def get_current_week_topic():
     """
     Determines the current week's topic from the 20-week roadmap, organized
     into 5 milestones. Message Queues folded into AWS Fundamentals/Networking
-    (Wk10-11) rather than given a standalone week, correcting an earlier
-    inconsistency - the verified source material lists SQS as content WITHIN
-    AWS fundamentals, not as its own dedicated topic.
+    rather than given a standalone week, matching verified source material.
 
     Uses REAL data with a genuine readiness gate: only advances to the next
     week if last week's quiz was passed AND last week's interview questions
@@ -21,26 +19,21 @@ def get_current_week_topic():
     repeats the SAME week's topic.
     """
     ROADMAP = {
-        # Milestone 1: Core Engine (Wk1-5)
         1: "Linux Basics - commands, file system navigation, permissions, and processes",
         2: "Linux Service Management - systemd, journalctl, process supervision",
         3: "Bash scripting fundamentals",
         4: "Networking fundamentals - TCP/IP, DNS resolution, OSI layers",
         5: "Git version control fundamentals",
-        # Milestone 2: Scripting & DevEx Layer (Wk6-9)
         6: "Python Basics",
         7: "DevOps for Python - automation scripting, testing, and packaging",
         8: "AI Tools for DevOps - Copilot, Cursor, CLI agents to accelerate infra-as-code and scripting work",
         9: "Python for API - FastAPI, REST endpoint design",
-        # Milestone 3: Cloud & Infrastructure (Wk10-12)
         10: "AWS fundamentals - IAM, EC2, Auto Scaling Groups, Route53, and event-driven systems via SQS",
         11: "AWS Networking - VPC, subnets, security groups, NAT gateways, routing",
         12: "Terraform Basic to Advanced",
-        # Milestone 4: Cloud-Native (Wk13-15)
         13: "Docker - basics through advanced multi-stage builds and image optimization",
         14: "Kubernetes - basics through advanced (pods, deployments, services, ingress, autoscaling)",
         15: "GitOps ArgoCD Helm",
-        # Milestone 5: Production-Ready Platform Engineering (Wk16-20)
         16: "CI/CD - Jenkins fundamentals and GitHub Actions (Actions-first emphasis per current industry trend)",
         17: "Observability - Prometheus Grafana",
         18: "DevSecOps",
@@ -112,8 +105,10 @@ def search_youtube_candidates(topic: str, max_results: int = 10) -> list:
 
 def get_video_durations(video_ids: list) -> dict:
     """
-    Fetches each video's duration in seconds - used only for sensible
-    watch-plan reasoning (splitting long videos), NEVER for popularity bias.
+    Fetches each video's duration in seconds. Used both as a scoring input
+    (cross-checking claimed scope against actual runtime, in score_candidate)
+    and for the separate watch-plan/timestamp feature. NEVER used for
+    popularity bias.
     """
     import re
     request = youtube.videos().list(
@@ -141,13 +136,22 @@ def get_last_week_channel() -> str:
     return None
 
 
-def score_candidate(candidate: dict, topic: str, last_week_channel: str) -> dict:
+def score_candidate(candidate: dict, topic: str, last_week_channel: str, duration_seconds: int = None) -> dict:
     """
     Scores a single video candidate using AI reasoning. pbc_depth is the
     highest-weighted criterion - checks whether the video's content plausibly
     goes deep enough for real product-based-company interview questions
-    (the "why", not just the "what"). NO popularity metrics used at all.
+    (the "why", not just the "what"). Duration is now factored in explicitly,
+    since a video claiming to cover "everything from basic to advanced" in
+    just a few minutes cannot genuinely deliver that depth, regardless of how
+    confident the title sounds - this was a real gap where duration existed
+    in the pipeline but was never used as a scoring input (caught via a real
+    example: a 9-minute "Complete Containerization Tutorial" claiming to
+    cover basic through advanced multi-stage builds). NO popularity metrics
+    used at all.
     """
+    duration_note = f"Video duration: {duration_seconds // 60} minutes." if duration_seconds else "Video duration: unknown."
+
     prompt = f"""
 Evaluate this YouTube video as a candidate for a DevOps/Platform Engineer interview-prep learning video.
 
@@ -156,6 +160,13 @@ Video title: {candidate['title']}
 Channel: {candidate['channel_name']}
 Description: {candidate['description'][:300]}
 Published: {candidate['published_at']}
+{duration_note}
+
+IMPORTANT: Cross-check the title/description's claimed scope against the actual duration above. A video
+claiming to cover "everything from basic to advanced" or "complete" coverage of multiple sub-topics in
+only a few minutes CANNOT genuinely deliver real depth - score pbc_depth LOW in this case, regardless of
+how confident or comprehensive the title sounds. A genuinely deep video needs enough runtime to actually
+explain the "why", not just list commands.
 
 Score on these criteria (each 1-10):
 - relevance: does this genuinely cover the topic, not just loosely related
@@ -163,11 +174,12 @@ Score on these criteria (each 1-10):
 - engagement_quality: does this sound genuinely well-explained and engaging based on title/description,
   not clickbait
 - recency: how recent is this, given DevOps tooling changes over time (recent = higher score)
-- pbc_depth: this is CRITICAL - based on the title/description, does this video's content plausibly go
-  deep enough to prepare someone for real Platform Engineer/DevOps interview questions at product-based
-  companies (Razorpay, Swiggy, PhonePe, etc.)? These interviews probe WHY, not just WHAT. A video that
-  only covers basic command syntax without touching real production reasoning, edge cases, or "why"
-  explanations should score LOW on this criterion, even if it's clear and well-taught for beginners.
+- pbc_depth: this is CRITICAL - based on the title/description AND the actual duration above, does this
+  video's content plausibly go deep enough to prepare someone for real Platform Engineer/DevOps interview
+  questions at product-based companies (Razorpay, Swiggy, PhonePe, etc.)? These interviews probe WHY, not
+  just WHAT. A video that only covers basic command syntax, OR that claims broad/comprehensive scope but
+  has too little runtime to actually deliver it, should score LOW on this criterion - even if the title
+  sounds impressive or the video is otherwise clear and well-taught for beginners.
 
 Do NOT consider view counts, likes, or subscriber counts - none of that data is provided or relevant.
 
@@ -223,13 +235,27 @@ Return JSON:
 
 
 def pick_best_video(topic: str) -> dict:
-    """Full pipeline: search, score, apply continuity bonus, pick winner."""
+    """
+    Full pipeline: search, fetch REAL durations for ALL candidates up front
+    (not just the eventual winner), score with duration as an input, apply
+    continuity bonus, pick winner. Fetching duration for all candidates
+    before scoring - not just the winner afterward - is the actual fix for
+    the gap where an ambitiously-worded but too-short video could score
+    artificially high on depth.
+    """
     candidates = search_youtube_candidates(topic)
     last_week_channel = get_last_week_channel()
 
+    if not candidates:
+        return None
+
+    video_ids = [c["video_id"] for c in candidates]
+    durations = get_video_durations(video_ids)
+
     scored = []
     for candidate in candidates:
-        score_result = score_candidate(candidate, topic, last_week_channel)
+        duration_seconds = durations.get(candidate["video_id"])
+        score_result = score_candidate(candidate, topic, last_week_channel, duration_seconds)
 
         if score_result.get("reject", False):
             continue
@@ -245,7 +271,13 @@ def pick_best_video(topic: str) -> dict:
         if last_week_channel and candidate["channel_id"] == last_week_channel:
             total_score += 3
 
-        scored.append({**candidate, "score": total_score, "match_type": score_result.get("match_type"), "pbc_depth": score_result.get("pbc_depth")})
+        scored.append({
+            **candidate,
+            "score": total_score,
+            "match_type": score_result.get("match_type"),
+            "pbc_depth": score_result.get("pbc_depth"),
+            "duration_seconds": duration_seconds
+        })
 
     if not scored:
         return None
@@ -263,9 +295,7 @@ def run_video_select():
         print(f"[video_select] No suitable video found for week {week_number}: {topic}")
         return None
 
-    durations = get_video_durations([winner["video_id"]])
-    duration_seconds = durations.get(winner["video_id"])
-
+    duration_seconds = winner.get("duration_seconds")
     timing = extract_timestamp_range(winner.get("description", ""), topic, duration_seconds)
 
     supabase.table("weekly_plan").insert({
@@ -281,5 +311,5 @@ def run_video_select():
     }).execute()
 
     split_note = f" | {timing.get('split_suggestion')}" if timing.get("split_suggestion") else ""
-    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
+    print(f"[video_select] Selected: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, duration: {duration_seconds}s, timing: {timing.get('start_time')}-{timing.get('end_time')}{split_note}")
     return winner

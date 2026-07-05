@@ -78,12 +78,11 @@ def search_youtube_candidates(topic: str, max_results: int = 10) -> list:
     """Open search on YouTube for the topic - no fixed trusted-channel bias."""
     request = youtube.search().list(
         part="snippet",
-        q=f"{topic} tutorial DevOps",
+        q=f"{topic} complete course full tutorial",
         type="video",
         maxResults=max_results,
         order="relevance",
-        relevanceLanguage="en",
-        videoDuration="medium"
+        relevanceLanguage="en"
     )
     response = request.execute()
 

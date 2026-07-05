@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from googleapiclient.discovery import build
-from ai_client import ask_ai_json
+from ai_client import ask_ai, ask_ai_json
 from db_client import supabase
 
 youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
@@ -9,10 +9,18 @@ youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 def get_current_week_topic():
     """
-    Determines the current week's topic from the 21-week roadmap, using
-    REAL data: counts the highest week_number already saved in weekly_plan
-    and advances by one. If nothing exists yet, starts at week 1. This
-    replaces the earlier hardcoded placeholder that always returned week 1.
+    Determines the current week's topic from the 21-week roadmap.
+    Uses REAL data with a genuine readiness gate: only advances to the next
+    week if last week's quiz was passed AND last week's interview questions
+    were genuinely cleared (average score >= 7/10). If either gate fails,
+    repeats the SAME week's topic - reinforcing weak material instead of
+    advancing to new content on a shaky foundation.
+
+    Uses AI-based topic matching for the quiz gate, since scores.topic and
+    the roadmap's topic text are independently worded (e.g. "Linux file
+    permissions (chmod)" vs "Linux command line basics file system
+    permissions" - same real subject, different exact text) - exact string
+    matching would incorrectly show quiz_passed=False even for a real pass.
     """
     ROADMAP = {
         1: "Linux command line basics file system permissions",
@@ -38,14 +46,40 @@ def get_current_week_topic():
         21: "Resume ATS and Interview Practice",
     }
 
-    existing = supabase.table("weekly_plan").select("week_number").order("week_number", desc=True).limit(1).execute()
+    existing = supabase.table("weekly_plan").select("week_number, topic").order("week_number", desc=True).limit(1).execute()
 
-    if existing.data:
-        week_number = existing.data[0]["week_number"] + 1
+    if not existing.data:
+        return 1, ROADMAP.get(1)
+
+    last_week_number = existing.data[0]["week_number"]
+    last_week_topic = existing.data[0]["topic"]
+
+    # GATE 1: check if last week's quiz was genuinely passed, using AI to match
+    # topic strings that refer to the same real subject but are worded differently
+    quiz_passed = False
+    recent_scores = supabase.table("scores").select("*").order("created_at", desc=True).limit(5).execute()
+    for score_row in recent_scores.data:
+        topic_match_prompt = (
+            "Does this quiz topic genuinely refer to the same real subject as this roadmap topic? "
+            'Quiz topic: "' + score_row.get("topic", "") + '" '
+            'Roadmap topic: "' + last_week_topic + '" '
+            "Reply with only YES or NO."
+        )
+        match_result = ask_ai(topic_match_prompt)
+        if "YES" in match_result.upper():
+            quiz_passed = score_row.get("passed", False)
+            break
+
+    # GATE 2: check if last week's interview questions were genuinely cleared (average score >= 7/10)
+    interview_result = supabase.table("interview_sessions").select("score").eq("topic", last_week_topic).execute()
+    interview_scores = [row["score"] for row in interview_result.data if row.get("score") is not None]
+    interview_cleared = (sum(interview_scores) / len(interview_scores) >= 7) if interview_scores else False
+
+    if quiz_passed and interview_cleared:
+        week_number = min(last_week_number + 1, 21)
     else:
-        week_number = 1
-
-    week_number = min(week_number, 21)
+        week_number = last_week_number
+        print(f"[video_select] Week {last_week_number} ({last_week_topic}) not yet cleared - quiz_passed={quiz_passed}, interview_cleared={interview_cleared}. Repeating this week.")
 
     topic = ROADMAP.get(week_number, "DevOps fundamentals")
     return week_number, topic

@@ -9,21 +9,16 @@ youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 def get_current_week_topic():
     """
-    Determines the current week's topic from the 21-week roadmap, organized
-    into 5 milestones (Core Engine, Scripting & DevEx, Cloud & Infrastructure,
-    Cloud-Native, Production-Ready). Restructured based on verified real-world
-    evidence: AI tooling moved earlier (Wk8) to accelerate later learning,
-    CI/CD consolidated toward GitHub Actions per confirmed 2026 industry
-    trend data, Databases/Caching folded into infrastructure work rather than
-    given dedicated weeks (no verified evidence they're dedicated interview
-    topics at target companies, per the "only add if genuinely PBC-relevant"
-    principle).
+    Determines the current week's topic from the 20-week roadmap, organized
+    into 5 milestones. Message Queues folded into AWS Fundamentals/Networking
+    (Wk10-11) rather than given a standalone week, correcting an earlier
+    inconsistency - the verified source material lists SQS as content WITHIN
+    AWS fundamentals, not as its own dedicated topic.
 
     Uses REAL data with a genuine readiness gate: only advances to the next
     week if last week's quiz was passed AND last week's interview questions
     were genuinely cleared (average score >= 7/10). If either gate fails,
-    repeats the SAME week's topic - reinforcing weak material instead of
-    advancing on a shaky foundation.
+    repeats the SAME week's topic.
     """
     ROADMAP = {
         # Milestone 1: Core Engine (Wk1-5)
@@ -37,21 +32,20 @@ def get_current_week_topic():
         7: "DevOps for Python - automation scripting, testing, and packaging",
         8: "AI Tools for DevOps - Copilot, Cursor, CLI agents to accelerate infra-as-code and scripting work",
         9: "Python for API - FastAPI, REST endpoint design",
-        # Milestone 3: Cloud & Infrastructure (Wk10-13)
-        10: "AWS fundamentals",
+        # Milestone 3: Cloud & Infrastructure (Wk10-12)
+        10: "AWS fundamentals - IAM, EC2, Auto Scaling Groups, Route53, and event-driven systems via SQS",
         11: "AWS Networking - VPC, subnets, security groups, NAT gateways, routing",
-        12: "Message Queues - SQS, Kafka fundamentals for distributed systems",
-        13: "Terraform Basic to Advanced",
-        # Milestone 4: Cloud-Native (Wk14-16)
-        14: "Docker - basics through advanced multi-stage builds and image optimization",
-        15: "Kubernetes - basics through advanced (pods, deployments, services, ingress, autoscaling)",
-        16: "GitOps ArgoCD Helm",
-        # Milestone 5: Production-Ready Platform Engineering (Wk17-21)
-        17: "CI/CD - Jenkins fundamentals and GitHub Actions (Actions-first emphasis per current industry trend)",
-        18: "Observability - Prometheus Grafana",
-        19: "DevSecOps",
-        20: "System Design and IDP Backstage concepts",
-        21: "Resume ATS and Interview Practice",
+        12: "Terraform Basic to Advanced",
+        # Milestone 4: Cloud-Native (Wk13-15)
+        13: "Docker - basics through advanced multi-stage builds and image optimization",
+        14: "Kubernetes - basics through advanced (pods, deployments, services, ingress, autoscaling)",
+        15: "GitOps ArgoCD Helm",
+        # Milestone 5: Production-Ready Platform Engineering (Wk16-20)
+        16: "CI/CD - Jenkins fundamentals and GitHub Actions (Actions-first emphasis per current industry trend)",
+        17: "Observability - Prometheus Grafana",
+        18: "DevSecOps",
+        19: "System Design and IDP Backstage concepts",
+        20: "Resume ATS and Interview Practice",
     }
 
     existing = supabase.table("weekly_plan").select("week_number, topic").order("week_number", desc=True).limit(1).execute()
@@ -81,7 +75,7 @@ def get_current_week_topic():
     interview_cleared = (sum(interview_scores) / len(interview_scores) >= 7) if interview_scores else False
 
     if quiz_passed and interview_cleared:
-        week_number = min(last_week_number + 1, 21)
+        week_number = min(last_week_number + 1, 20)
     else:
         week_number = last_week_number
         print(f"[video_select] Week {last_week_number} ({last_week_topic}) not yet cleared - quiz_passed={quiz_passed}, interview_cleared={interview_cleared}. Repeating this week.")

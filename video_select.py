@@ -9,8 +9,10 @@ youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 def get_current_week_topic():
     """
-    Determines this week's topic from the 21-week roadmap.
-    Placeholder: week 1. Replace with real week-tracking logic once confirmed.
+    Determines the current week's topic from the 21-week roadmap, using
+    REAL data: counts the highest week_number already saved in weekly_plan
+    and advances by one. If nothing exists yet, starts at week 1. This
+    replaces the earlier hardcoded placeholder that always returned week 1.
     """
     ROADMAP = {
         1: "Linux command line basics file system permissions",
@@ -35,7 +37,16 @@ def get_current_week_topic():
         20: "System Design and IDP Backstage concepts",
         21: "Resume ATS and Interview Practice",
     }
-    week_number = 1
+
+    existing = supabase.table("weekly_plan").select("week_number").order("week_number", desc=True).limit(1).execute()
+
+    if existing.data:
+        week_number = existing.data[0]["week_number"] + 1
+    else:
+        week_number = 1
+
+    week_number = min(week_number, 21)
+
     topic = ROADMAP.get(week_number, "DevOps fundamentals")
     return week_number, topic
 
@@ -142,10 +153,7 @@ def extract_timestamp_range(description: str, topic: str, duration_seconds: int 
     """
     Checks if the video description contains chapter timestamps, and if so,
     identifies which range covers the topic. If no timestamps exist, reasons
-    about the video's total duration to suggest a sensible watch plan -
-    either "watch fully today" for a reasonably short video, or a suggested
-    split across multiple days for a genuinely long one - rather than just
-    defaulting to "watch everything, no guidance."
+    about the video's total duration to suggest a sensible watch plan.
     """
     duration_note = f"Video duration: approximately {duration_seconds // 60} minutes." if duration_seconds else "Video duration unknown."
 

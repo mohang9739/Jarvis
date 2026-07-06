@@ -4,6 +4,10 @@ JARVIS Quiz Engine
 - Gate 2: MCQ A/B/C/D → ≥70% pass, <70% Gemini explains weak areas + retry
 - All interaction via Discord webhook
 - Scores written to Supabase scores table
+- Both gates are now scoped to TODAY'S ACTUAL VIDEO SEGMENT (video_start_time to
+  video_end_time), not the full broad topic - since long videos get split across
+  multiple days, testing the entire topic on Day 1 (after only the first segment)
+  would unfairly cover material not yet watched.
 """
 
 import os
@@ -74,6 +78,27 @@ def get_todays_topic() -> dict:
     return result.data[0]
 
 
+def build_segment_note(plan: dict) -> str:
+    """
+    Builds a note describing TODAY'S actual video segment (start-end time),
+    so Gate 1 and Gate 2 can scope their questions to only what's genuinely
+    been covered so far, not the entire broad topic regardless of progress.
+    """
+    start = plan.get("video_start_time")
+    end = plan.get("video_end_time")
+
+    if not start or not end:
+        return ""
+
+    return (
+        f"\nIMPORTANT SCOPE NOTE: The learner has only watched from {start} to {end} of "
+        f"today's video segment (this is one part of a longer video split across multiple "
+        f"days). ONLY ask about concepts realistically covered within this specific segment - "
+        f"do NOT ask about material that would only appear later in the full video, since "
+        f"they have not reached that part yet.\n"
+    )
+
+
 def save_score(topic: str, gate1_score: int, gate1_feedback: str,
                gate2_score: int, passed: bool):
     supabase.table("scores").insert({
@@ -87,18 +112,18 @@ def save_score(topic: str, gate1_score: int, gate1_feedback: str,
     print(f"[quiz_engine] Score saved: Gate1={gate1_score} Gate2={gate2_score} Passed={passed}")
 
 
-def grade_gate1(topic: str, user_explanation: str) -> dict:
+def grade_gate1(topic: str, user_explanation: str, segment_note: str = "") -> dict:
     prompt = f"""
 You are JARVIS, a strict but fair Platform Engineering tutor.
 
 Topic: {topic}
-
+{segment_note}
 The learner explained it as:
 \"\"\"{user_explanation}\"\"\"
 
 Grade their explanation on a scale of 1-10 based on:
 - Accuracy (is it technically correct?)
-- Completeness (did they cover the key points?)
+- Completeness (did they cover the key points genuinely reachable within today's segment?)
 - Clarity (is it explained in their own words, not memorized?)
 
 Be honest. Do NOT rubber-stamp a good score if the explanation is vague or wrong.
@@ -131,7 +156,7 @@ Do NOT repeat the same explanation they already saw.
     return ask_ai(prompt)
 
 
-def run_gate1(topic: str) -> tuple:
+def run_gate1(topic: str, segment_note: str = "") -> tuple:
     post_to_discord(
         f"🧠 **JARVIS — Gate 1: Explain-Back**\n\n"
         f"📌 **Today's Topic:** {topic}\n\n"
@@ -147,7 +172,7 @@ def run_gate1(topic: str) -> tuple:
         else:
             user_explanation = wait_for_discord_reply("")
 
-        result = grade_gate1(topic, user_explanation)
+        result = grade_gate1(topic, user_explanation, segment_note)
         score = result.get("score", 0)
         feedback = result.get("feedback", "")
         key_points_missed = result.get("key_points_missed", [])
@@ -179,12 +204,13 @@ def run_gate1(topic: str) -> tuple:
     return 0, "Max retries reached."
 
 
-def generate_mcq(topic: str, count: int = MCQ_COUNT) -> list:
+def generate_mcq(topic: str, count: int = MCQ_COUNT, segment_note: str = "") -> list:
     prompt = f"""
 You are JARVIS. Generate {count} multiple-choice questions for a Platform Engineering interview on: {topic}
-
+{segment_note}
 Rules:
 - Questions must test real understanding, not just definitions
+- ONLY test material realistically covered within today's specific segment noted above (if any)
 - Each question has exactly 4 options: A, B, C, D
 - Only one correct answer per question
 - Mix conceptual and practical questions
@@ -207,14 +233,14 @@ Respond ONLY with valid JSON array:
     return ask_ai_json(prompt)
 
 
-def run_gate2(topic: str) -> int:
+def run_gate2(topic: str, segment_note: str = "") -> int:
     for attempt in range(1, MAX_GATE2_RETRIES + 1):
         post_to_discord(
             f"📋 **JARVIS — Gate 2: MCQ** (Attempt {attempt}/{MAX_GATE2_RETRIES})\n\n"
             f"Generating {MCQ_COUNT} questions on **{topic}**..."
         )
 
-        questions = generate_mcq(topic)
+        questions = generate_mcq(topic, segment_note=segment_note)
         correct_count = 0
         wrong_questions = []
 
@@ -283,7 +309,8 @@ def run_quiz():
         now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
         plan = get_todays_topic()
         topic = plan["topic"]
-        print(f"[quiz_engine] Today's topic: {topic}")
+        segment_note = build_segment_note(plan)
+        print(f"[quiz_engine] Today's topic: {topic}, segment: {plan.get('video_start_time')}-{plan.get('video_end_time')}")
 
         post_to_discord(
             f"🚀 **JARVIS Quiz Starting**\n"
@@ -292,8 +319,8 @@ def run_quiz():
             f"📌 Topic: **{topic}**"
         )
 
-        gate1_score, gate1_feedback = run_gate1(topic)
-        gate2_score = run_gate2(topic)
+        gate1_score, gate1_feedback = run_gate1(topic, segment_note)
+        gate2_score = run_gate2(topic, segment_note)
 
         passed = gate1_score >= GATE1_PASS_SCORE and gate2_score >= GATE2_PASS_PERCENT
         save_score(topic, gate1_score, gate1_feedback, gate2_score, passed)

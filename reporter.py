@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from db_client import supabase
 import requests
 
@@ -22,12 +22,28 @@ def get_today_quiz_status() -> dict:
 
 
 def get_this_week_video() -> dict:
-    """Checks this week's selected video from weekly_plan."""
-    result = supabase.table("weekly_plan").select("*").order("created_at", desc=True).limit(1).execute()
+    """
+    Checks TODAY's specific video segment from weekly_plan, matching
+    today's real day name - not just whichever row was inserted most
+    recently, since multiple days' rows now exist per week (Monday-
+    Saturday), each with its own distinct per-day timestamp segment.
+    Includes the actual watch-today timestamp range, previously missing
+    entirely from the report.
+    """
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    today_name = now_ist.strftime("%A")
+
+    result = supabase.table("weekly_plan").select("*").eq("day_of_week", today_name).order("created_at", desc=True).limit(1).execute()
     if not result.data:
         return {"status": "not selected", "detail": ""}
     row = result.data[0]
-    return {"status": "✅ selected", "detail": f"{row.get('topic', 'topic')} - {row.get('channel_name', 'unknown channel')}"}
+
+    start = row.get("video_start_time", "0:00:00")
+    end = row.get("video_end_time")
+    timestamp_note = f"Watch today: {start} to {end}" if end else f"Watch today: full video from {start}"
+
+    detail = f"{row.get('topic', 'topic')} - {row.get('channel_name', 'unknown channel')}\n{timestamp_note}\n{row.get('video_url', '')}"
+    return {"status": "✅ selected", "detail": detail}
 
 
 def get_today_job_scan_status() -> dict:
@@ -37,7 +53,7 @@ def get_today_job_scan_status() -> dict:
 
     if not result.data:
         return {"status": "✅ ran, no new matches found", "detail": ""}
-    
+
     surfaced = [r for r in result.data if r.get("surfaced")]
     if surfaced:
         return {"status": f"✅ {len(surfaced)} new match(es)", "detail": ", ".join([f"{r['company']}" for r in surfaced[:3]])}

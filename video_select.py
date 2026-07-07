@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from ai_client import ask_ai, ask_ai_json
 from db_client import supabase

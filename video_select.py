@@ -4,17 +4,17 @@ from googleapiclient.discovery import build
 from ai_client import ask_ai, ask_ai_json
 from db_client import supabase
 from transcript_client import fetch_full_transcript, extract_segment_text
+from fixed_video_map import get_week_config
 
 youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 
 def get_current_week_topic():
     """
-    Determines the current week's topic from the 20-week roadmap, organized
-    into 5 milestones. Uses REAL data with a genuine readiness gate: only
-    advances to the next week if last week's quiz was passed AND last week's
-    interview questions were genuinely cleared (average score >= 7/10). If
-    either gate fails, repeats the SAME week's topic.
+    Determines the current week's topic from the 20-week roadmap.
+    Uses REAL data with a genuine readiness gate: only advances to the
+    next week if last week's quiz was passed AND last week's interview
+    questions were genuinely cleared (average score >= 7/10).
     """
     ROADMAP = {
         1: "Linux Basics - commands, file system navigation, permissions, and processes",
@@ -101,7 +101,7 @@ def search_youtube_candidates(topic: str, max_results: int = 10) -> list:
 
 
 def get_video_durations(video_ids: list) -> dict:
-    """Fetches each video's duration in seconds. Used as a scoring input and for watch-plan splitting."""
+    """Fetches each video's duration in seconds."""
     import re
     request = youtube.videos().list(
         part="contentDetails",
@@ -129,7 +129,7 @@ def get_last_week_channel() -> str:
 
 
 def score_candidate(candidate: dict, topic: str, last_week_channel: str, duration_seconds: int = None) -> dict:
-    """Scores a video candidate. pbc_depth is highest-weighted, factors in duration vs claimed scope."""
+    """Scores a video candidate. pbc_depth is highest-weighted."""
     duration_note = f"Video duration: {duration_seconds // 60} minutes." if duration_seconds else "Video duration: unknown."
 
     prompt = f"""
@@ -142,22 +142,15 @@ Description: {candidate['description'][:300]}
 Published: {candidate['published_at']}
 {duration_note}
 
-IMPORTANT: Cross-check the title/description's claimed scope against the actual duration above. A video
-claiming broad coverage in only a few minutes CANNOT genuinely deliver that depth - score pbc_depth LOW
-in this case. Longer, substantial videos that use their time to genuinely explain reasoning should score
-HIGHER on pbc_depth than short videos covering the same ground superficially.
+IMPORTANT: Cross-check the title/description's claimed scope against the actual duration above.
+A video claiming broad coverage in only a few minutes CANNOT genuinely deliver that depth.
 
 Score on these criteria (each 1-10):
-- relevance: does this genuinely cover the topic, not just loosely related
-- hands_on: does the title/description suggest practical, hands-on demonstration vs pure theory
-- engagement_quality: does this sound genuinely well-explained and engaging, not clickbait
-- recency: how recent is this, given DevOps tooling changes over time
-- pbc_depth: does this video's content plausibly go deep enough for real PE/DevOps interview questions
-  at product-based companies? A video claiming broad scope but too short to deliver it should score LOW.
-
-Do NOT consider view counts, likes, or subscriber counts.
-
-Also determine: full match, partial match, or no match (reject).
+- relevance: does this genuinely cover the topic
+- hands_on: practical demonstration vs pure theory
+- engagement_quality: well-explained and engaging, not clickbait
+- recency: how recent, given DevOps tooling changes
+- pbc_depth: deep enough for real PE/DevOps interview questions at product-based companies?
 
 Return JSON:
 {{
@@ -175,24 +168,18 @@ Return JSON:
 
 
 def extract_timestamp_range(description: str, topic: str, duration_seconds: int = None) -> dict:
-    """
-    Checks if the video description contains chapter timestamps. If none
-    exist, reasons about total duration to suggest a watch plan.
-    """
+    """Checks for chapter timestamps in the video description."""
     duration_note = f"Video duration: approximately {duration_seconds // 60} minutes." if duration_seconds else "Video duration unknown."
 
     prompt = f"""
-This is a YouTube video description. Check if it contains chapter timestamps (like "0:00 Intro", "2:15 Topic Name").
+This is a YouTube video description. Check if it contains chapter timestamps.
 
 Topic to find: {topic}
 Description: {description[:1000]}
 {duration_note}
 
 If timestamps exist AND one clearly covers this topic, return that exact range, has_timestamps=true.
-
-If NO usable timestamps exist, reason about duration instead:
-- Under ~35 minutes: suggest watching fully in one sitting today.
-- 35+ minutes with no chapters: suggest a sensible split across multiple days, note it in "split_suggestion".
+If NO usable timestamps exist, suggest a split across multiple days in "split_suggestion".
 
 Return JSON:
 {{
@@ -206,7 +193,7 @@ Return JSON:
 
 
 def pick_best_video(topic: str) -> dict:
-    """Full pipeline: search, fetch durations for ALL candidates, score, apply continuity bonus, pick winner."""
+    """Full search pipeline: search, fetch durations, score, pick winner."""
     candidates = search_youtube_candidates(topic)
     last_week_channel = get_last_week_channel()
 
@@ -251,7 +238,7 @@ def pick_best_video(topic: str) -> dict:
 
 
 def _timestamp_to_seconds(timestamp_str: str) -> int:
-    """Converts an 'H:MM:SS' string back into total seconds, for transcript segment extraction."""
+    """Converts an 'H:MM:SS' string back into total seconds."""
     parts = timestamp_str.split(":")
     if len(parts) == 3:
         h, m, s = parts
@@ -263,7 +250,7 @@ def _timestamp_to_seconds(timestamp_str: str) -> int:
 
 
 def format_seconds_to_timestamp(total_seconds: int) -> str:
-    """Converts seconds into HH:MM:SS format for storing in video_start_time/video_end_time."""
+    """Converts seconds into HH:MM:SS format."""
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
@@ -271,11 +258,7 @@ def format_seconds_to_timestamp(total_seconds: int) -> str:
 
 
 def calculate_per_day_segments(duration_seconds: int, num_days: int) -> list:
-    """
-    Divides a long video's total duration evenly across the number of days
-    it's assigned to, returning a list of (start_time_str, end_time_str)
-    tuples - one per day.
-    """
+    """Divides a long video's total duration evenly across the number of days."""
     if not duration_seconds or num_days <= 1:
         return [("0:00:00", None)] * max(num_days, 1)
 
@@ -288,14 +271,76 @@ def calculate_per_day_segments(duration_seconds: int, num_days: int) -> list:
     return segments
 
 
+def _save_fixed_week(week_number: int, topic: str, config: dict, all_days: list):
+    """
+    Saves weekly_plan rows using the pre-verified fixed video map.
+    Handles both single-video (split by timestamp) and episode-list formats.
+    Fetches real transcript once per video for transcript-grounded quiz/interview generation.
+    """
+    if config["type"] == "single":
+        duration_seconds = config.get("duration_seconds", 3600)
+        per_day_segments = calculate_per_day_segments(duration_seconds, len(all_days))
+        video_url = f"https://youtube.com/watch?v={config['video_id']}"
+
+        full_transcript = fetch_full_transcript(video_url)
+        if full_transcript:
+            print(f"[video_select] Fetched transcript for Week {week_number}: {len(full_transcript)} entries")
+        else:
+            print(f"[video_select] No transcript available - questions will use topic-based reasoning")
+
+        for day_name, (day_start, day_end) in zip(all_days, per_day_segments):
+            start_seconds = _timestamp_to_seconds(day_start)
+            end_seconds = _timestamp_to_seconds(day_end) if day_end else start_seconds + 3600
+            segment_text = extract_segment_text(full_transcript, start_seconds, end_seconds) if full_transcript else ""
+
+            supabase.table("weekly_plan").insert({
+                "week_number": week_number,
+                "day_of_week": day_name,
+                "topic": config.get("topic", topic),
+                "video_url": video_url,
+                "video_start_time": day_start,
+                "video_end_time": day_end,
+                "channel_id": None,
+                "channel_name": config.get("channel", ""),
+                "status": "selected",
+                "transcript_segment": segment_text[:3000] if segment_text else None
+            }).execute()
+
+    elif config["type"] == "episodes":
+        episodes = config.get("episodes", [])
+        days_to_use = all_days[:len(episodes)]
+
+        for day_name, episode in zip(days_to_use, episodes):
+            video_url = f"https://youtube.com/watch?v={episode['video_id']}"
+            full_transcript = fetch_full_transcript(video_url)
+            segment_text = ""
+            if full_transcript:
+                segment_text = extract_segment_text(full_transcript, 0, 99999)[:3000]
+
+            supabase.table("weekly_plan").insert({
+                "week_number": week_number,
+                "day_of_week": day_name,
+                "topic": config.get("topic", topic),
+                "video_url": video_url,
+                "video_start_time": "0:00:00",
+                "video_end_time": None,
+                "channel_id": None,
+                "channel_name": config.get("channel", ""),
+                "status": "selected",
+                "transcript_segment": segment_text
+            }).execute()
+
+    print(f"[video_select] Week {week_number} saved using fixed map ({config['type']})")
+
+
 def run_video_select():
     """
     Entry point - picks this week's video(s), determines timing, saves to
-    weekly_plan for every day Monday-Saturday. Fetches the REAL transcript
-    ONCE per winning video (not once per day, to genuinely minimize API
-    credit usage), then saves each day's actual, real spoken-content segment
-    text - so Quiz Engine and Interview Engine can generate genuinely
-    content-grounded questions, not just time-based reasoning.
+    weekly_plan for every day Monday-Saturday.
+    For Weeks 1-12: uses the pre-verified fixed video map (real, confirmed
+    sources - no YouTube search guesswork).
+    For Weeks 13+: falls back to YouTube search-and-score pipeline (not yet
+    verified, will be updated in a future session).
     """
     BROAD_WEEKS_SUB_TOPICS = {
         13: ["Docker basics fundamentals containers images", "Docker advanced multi-stage builds image optimization"],
@@ -306,6 +351,16 @@ def run_video_select():
     ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
     week_number, topic = get_current_week_topic()
+
+    # --- Weeks 1-12: use pre-verified fixed video map ---
+    fixed_config = get_week_config(week_number)
+    if fixed_config:
+        print(f"[video_select] Week {week_number} using pre-verified fixed video source: {fixed_config.get('title', 'episode series')}")
+        _save_fixed_week(week_number, topic, fixed_config, ALL_DAYS)
+        return [fixed_config]
+
+    # --- Weeks 13+: fall back to YouTube search pipeline ---
+    print(f"[video_select] Week {week_number} not in fixed map yet - using search pipeline")
 
     sub_topics = BROAD_WEEKS_SUB_TOPICS.get(week_number)
     topics_to_search = sub_topics if sub_topics else [topic]
@@ -335,15 +390,12 @@ def run_video_select():
         else:
             per_day_segments = [(timing.get("start_time", "0:00:00"), timing.get("end_time"))] * len(days_for_this_video)
 
-        # Fetch the full real transcript ONCE per winning video (not once per day),
-        # to genuinely minimize API credit usage while still grounding every day's
-        # quiz/interview generation in real, actual spoken content.
         video_url = f"https://youtube.com/watch?v={winner['video_id']}"
         full_transcript = fetch_full_transcript(video_url)
         if full_transcript:
             print(f"[video_select] Fetched real transcript: {len(full_transcript)} entries")
         else:
-            print(f"[video_select] No transcript available for this video - will fall back to reasoning-based generation")
+            print(f"[video_select] No transcript available - will fall back to reasoning-based generation")
 
         for day_name, (day_start, day_end) in zip(days_for_this_video, per_day_segments):
             start_seconds = _timestamp_to_seconds(day_start)
@@ -363,9 +415,8 @@ def run_video_select():
                 "transcript_segment": segment_text[:3000] if segment_text else None
             }).execute()
 
-        split_note = f" | {timing.get('split_suggestion')}" if timing.get("split_suggestion") else ""
         part_label = f" (part {i+1}/{len(topics_to_search)})" if len(topics_to_search) > 1 else ""
-        print(f"[video_select] Selected{part_label}: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, duration: {duration_seconds}s, days: {days_for_this_video}{split_note}")
+        print(f"[video_select] Selected{part_label}: {winner['title']} ({winner['channel_name']}) - score: {winner['score']}, pbc_depth: {winner.get('pbc_depth')}, duration: {duration_seconds}s")
         saved_videos.append(winner)
 
     return saved_videos

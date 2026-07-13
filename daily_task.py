@@ -155,3 +155,59 @@ def send_daily_tasks():
 
 if __name__ == "__main__":
     send_daily_tasks()
+
+import random
+
+FAILURE_DRILLS = [
+    {
+        "title": "P0 INCIDENT — Payment Service Down",
+        "scenario": "Razorpay alert: 15,000 transactions/min failing. Payment pods in CrashLoopBackOff. Error rate 94%.",
+        "task": "You are on-call. 10 minutes. What do you do first?"
+    },
+    {
+        "title": "P1 INCIDENT — Database Connection Pool Exhausted", 
+        "scenario": "Swiggy alert: PostgreSQL max_connections reached. Orders stalling. API latency 45 seconds. 50,000 users affected.",
+        "task": "What is your first command and why?"
+    },
+    {
+        "title": "P0 INCIDENT — Kubernetes Node NotReady",
+        "scenario": "PhonePe alert: 3 of 5 EKS nodes NotReady. Pods evicting. UPI service degraded. RBI SLA breach in 8 minutes.",
+        "task": "What do you check first?"
+    },
+    {
+        "title": "P1 INCIDENT — CI/CD Pipeline Blocked",
+        "scenario": "CRED alert: GitHub Actions failing all PRs. ArgoCD sync stuck. Critical hotfix cannot deploy.",
+        "task": "Unblock the pipeline. What is your immediate diagnosis?"
+    },
+    {
+        "title": "P0 INCIDENT — Disk Space Critical",
+        "scenario": "Groww alert: /var/log at 99%. Nginx log rotation failed. Service writes failing silently.",
+        "task": "5 minutes before service goes down. What do you do?"
+    }
+]
+
+def send_failure_drill():
+    """Send random production incident drill to Discord."""
+    from datetime import datetime, timedelta
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    hour = now_ist.hour
+    if not (10 <= hour <= 20):
+        return
+    if random.random() > 0.3:
+        return
+    drill = random.choice(FAILURE_DRILLS)
+    message = f"""
+🚨🚨🚨 **JARVIS FAILURE DRILL** 🚨🚨🚨
+━━━━━━━━━━━━━━━━━━━━━━━
+
+**{drill['title']}**
+
+{drill['scenario']}
+
+⏱️ **YOUR TASK:** {drill['task']}
+
+*Training drill — respond with your incident steps*
+━━━━━━━━━━━━━━━━━━━━━━━"""
+    if DISCORD_WEBHOOK:
+        requests.post(DISCORD_WEBHOOK, json={"content": message})
+        print("[daily_task] Failure drill sent to Discord")

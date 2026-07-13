@@ -11,6 +11,7 @@ from interview_engine import run_weekly_interview_set
 from journal_export import run_journal_export
 from health_engine import get_current_shift, get_today_study_status
 from daily_task import send_daily_tasks
+from generate_quiz import generate_daily_quiz
 
 
 def get_module_status_summary() -> dict:
@@ -69,6 +70,13 @@ def run_daily_orchestration():
 
     if should_delay_report(shift, study_status):
         print(f"[orchestrator] Current time falls in {shift} shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.")
+
+    # --- Generate Quiz Questions from transcript ---
+    try:
+        generate_daily_quiz()
+        print("[orchestrator] Quiz questions generated")
+    except Exception as e:
+        print(f"[orchestrator] Quiz generation failed: {e}")
 
     # --- Daily Task List: runs every day FIRST ---
     try:

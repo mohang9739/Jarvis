@@ -1,0 +1,243 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 7, in <module>
+    from video_select import run_video_select
+  File "/home/ubuntu/jarvis/video_select.py", line 3, in <module>
+    from googleapiclient.discovery import build
+ModuleNotFoundError: No module named 'googleapiclient'
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 7, in <module>
+    from video_select import run_video_select
+  File "/home/ubuntu/jarvis/video_select.py", line 3, in <module>
+    from googleapiclient.discovery import build
+ModuleNotFoundError: No module named 'googleapiclient'
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 7, in <module>
+    from video_select import run_video_select
+  File "/home/ubuntu/jarvis/video_select.py", line 3, in <module>
+    from googleapiclient.discovery import build
+ModuleNotFoundError: No module named 'googleapiclient'
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 7, in <module>
+    from video_select import run_video_select
+  File "/home/ubuntu/jarvis/video_select.py", line 3, in <module>
+    from googleapiclient.discovery import build
+ModuleNotFoundError: No module named 'googleapiclient'
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 7, in <module>
+    from video_select import run_video_select
+  File "/home/ubuntu/jarvis/video_select.py", line 3, in <module>
+    from googleapiclient.discovery import build
+ModuleNotFoundError: No module named 'googleapiclient'
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 7, in <module>
+    from video_select import run_video_select
+  File "/home/ubuntu/jarvis/video_select.py", line 3, in <module>
+    from googleapiclient.discovery import build
+ModuleNotFoundError: No module named 'googleapiclient'
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 8, in <module>
+    from job_scan import run_job_scan
+  File "/home/ubuntu/jarvis/job_scan.py", line 2, in <module>
+    from tavily import TavilyClient
+ModuleNotFoundError: No module named 'tavily'
+=== Orchestrator run completed at Sat Jul  4 01:24:05 UTC 2026 ===
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 8, in <module>
+    from job_scan import run_job_scan
+  File "/home/ubuntu/jarvis/job_scan.py", line 2, in <module>
+    from tavily import TavilyClient
+ModuleNotFoundError: No module named 'tavily'
+=== Orchestrator run completed at Sat Jul  4 01:27:30 UTC 2026 ===
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis/orchestrator.py", line 8, in <module>
+    from job_scan import run_job_scan
+  File "/home/ubuntu/jarvis/job_scan.py", line 2, in <module>
+    from tavily import TavilyClient
+ModuleNotFoundError: No module named 'tavily'
+=== Orchestrator run completed at Sat Jul  4 01:30:32 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:55: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:30: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False
+[orchestrator] Skipping Video Select - not Monday
+[job_scan] Not yet surfacing jobs - The candidate has only completed one very foundational topic (Linux file permissions) with a good score. Genuine readiness for Platform Engineer/DevOps/SRE roles at companies like Razorpay, Swiggy, or PhonePe requires solid performance across a significant majority of foundational and intermediate topics, including deeper Linux concepts, Bash scripting, Networking, Docker, Kubernetes, CI/CD, Terraform, cloud platforms, monitoring, and system design. With only one topic covered out of a 21-week roadmap, the candidate is far from ready for such roles.
+[reporter] Report posted successfully
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sat Jul  4 01:35:28 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:55: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:30: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False
+[orchestrator] Skipping Video Select - not Monday
+[job_scan] Not yet surfacing jobs - The candidate has only completed one very early topic (Linux file permissions) out of a 21-week comprehensive roadmap. While the score for this single topic is strong (8), it is far too premature to assess readiness for Platform Engineer/DevOps/SRE roles. These roles require solid and consistent performance across a broad range of foundational (Linux, Bash, Networking) and intermediate topics (Kubernetes, CI/CD, Terraform, Cloud, Monitoring, etc.), none of which have been covered yet.
+[reporter] Report posted successfully
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sat Jul  4 01:39:50 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:55: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:30: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[job_scan] Not yet surfacing jobs - Only one topic ('Linux file permissions') has been covered from a 21-week roadmap. Job readiness for Platform Engineer/DevOps/SRE roles requires a solid understanding and demonstrated performance across a broad range of foundational (Linux, Networking, Bash) and intermediate topics (Docker, Kubernetes, CI/CD, Cloud platforms, IaC like Terraform). The current progress is minimal, making it impossible to assess overall readiness.
+[reporter] Report posted successfully
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sat Jul  4 03:01:22 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:55: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:30: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False
+[orchestrator] Skipping Video Select - not Monday
+[job_scan] Not yet surfacing jobs - The candidate has only completed one very foundational topic (Linux file permissions) out of a comprehensive 21-week roadmap. While the score for this single topic is strong, genuine readiness for Platform Engineer/DevOps/SRE roles at companies like Razorpay, Swiggy, or PhonePe demands solid performance across a majority of foundational and intermediate topics, including advanced Linux, Bash, Networking, Kubernetes, CI/CD, and Infrastructure as Code. Current progress is far too limited to indicate job readiness.
+[reporter] Report posted successfully
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sat Jul  4 13:32:44 UTC 2026 ===
+Sat Jul  4 13:58:55 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:56: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select and Interview Set - not Monday
+[job_scan] Not yet surfacing jobs - The candidate has only completed one topic out of a 21-week roadmap. While the score for this single topic is strong, readiness for Platform Engineer/DevOps/SRE roles requires comprehensive knowledge and solid performance across a broad range of foundational and intermediate topics (e.g., deeper Linux, Bash, Networking, Docker, Kubernetes, CI/CD, Terraform, Cloud), which are yet to be covered.
+[reporter] Report posted successfully
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sun Jul  5 03:01:18 UTC 2026 ===
+Sun Jul  5 12:07:57 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+Sun Jul  5 17:45:12 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:56: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: True
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[video_select] Selected: Linux Full Course for Beginners | Learn Linux System Administration (Alpha Brains Courses) - score: 68.5, pbc_depth: 7, duration: 13760s, days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], per-day segments: [('0:00:00', '0:38:13'), ('0:38:13', '1:16:26'), ('1:16:26', '1:54:39'), ('1:54:39', '2:32:52'), ('2:32:52', '3:11:05'), ('3:11:05', '3:49:20')] | The video is approximately 229 minutes long. For a beginner tutorial of this length, it's recommended to split it into 3 sessions across multiple days for better absorption and practice. For example, three sessions of roughly 1 hour 16 minutes each.
+[video_select] Week 1 (Linux Basics - commands, file system navigation, permissions, and processes) not yet cleared - quiz_passed=False, interview_cleared=False. Repeating this week.
+[orchestrator] Interview set generated for week 1: Linux Basics - commands, file system navigation, permissions, and processes
+[job_scan] Not yet surfacing jobs - The candidate has only covered a single, very foundational topic (Linux file permissions) out of a 21-week roadmap. While the Gate1 score of 8 is strong for this specific topic, there is no Gate2 score to confirm mastery, and crucially, readiness for Platform Engineer/DevOps/SRE roles at companies like Razorpay requires a broad and deep understanding across many intermediate and advanced topics, including networking, scripting, cloud, containers (Kubernetes), CI/CD, and infrastructure as code. The current coverage is extremely insufficient for job readiness.
+[reporter] Report posted successfully
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': True, 'error': None}, 'interview_set': {'ran': True, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Mon Jul  6 03:04:33 UTC 2026 ===
+Mon Jul  6 03:35:27 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+Mon Jul  6 09:03:41 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   1905b41..81f0468  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - The candidate has demonstrated strong performance on the two initial Linux topics covered (scores of 8, and 9/100). However, only a very small portion (2 topics) of the 21-week roadmap has been completed. Genuine readiness for Platform Engineer/DevOps/SRE roles at top-tier companies requires robust knowledge and demonstrated skill across a much wider range of foundational and intermediate topics, including areas like networking, scripting, cloud, CI/CD, and Kubernetes, which are yet to be addressed.
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-07
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Tue Jul  7 03:01:20 UTC 2026 ===
+Tue Jul  7 03:47:29 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   81f0468..66d008b  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - No quiz/interview data yet
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-08
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Wed Jul  8 03:01:26 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   66d008b..b97db52  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - No quiz/interview data yet
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-09
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Thu Jul  9 03:01:16 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   b97db52..ed560fe  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: True
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[video_select] Week 1 (Linux Basics - commands, file system navigation, permissions, and processes) not yet cleared - quiz_passed=False, interview_cleared=False. Repeating this week.
+[interview_engine] Grounding questions in 6000 chars of real transcript content
+[orchestrator] Interview set generated for week 1: Linux Basics - commands, file system navigation, permissions, and processes
+[job_scan] Not yet surfacing jobs - No quiz/interview data yet
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-10
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': True, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Fri Jul 10 03:02:07 UTC 2026 ===
+/home/ubuntu/jarvis/orchestrator.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   ed560fe..fbf599f  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - No quiz/interview data yet
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-11
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sat Jul 11 03:01:15 UTC 2026 ===
+Sat Jul 11 04:13:45 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   fbf599f..6f03cb4  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - No quiz/interview data yet
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-12
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Sun Jul 12 03:01:14 UTC 2026 ===
+Sun Jul 12 10:44:24 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:62: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:33: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   6f03cb4..8ed5f94  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: True, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[daily_task] Discord message sent successfully
+[orchestrator] Daily task list sent to Discord
+[video_select] Week 1 (Linux Basics - commands, file system navigation, permissions, and processes) not yet cleared - quiz_passed=False, interview_cleared=False. Repeating this week.
+[video_select] Week 1 using pre-verified fixed video source: Introduction to Linux – Full Course for Beginners
+[video_select] Fetched transcript for Week 1: 7886 entries
+[video_select] Week 1 saved using fixed map (single)
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - No quiz/interview data yet
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-13
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': True, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}, 'daily_task': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Mon Jul 13 03:01:16 UTC 2026 ===
+Mon Jul 13 04:15:43 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown

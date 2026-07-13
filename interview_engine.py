@@ -27,15 +27,19 @@ def generate_interview_question(topic: str, question_type: str, transcript_conte
     """
     content_block = ""
     if transcript_content:
+      content_block = ""
+    if transcript_content:
         content_block = f"""
 REAL VIDEO CONTENT - this is genuine content actually covered this week:
 \"\"\"
 {transcript_content}
 \"\"\"
 
-Ground your question in SPECIFIC concepts, commands, or examples genuinely mentioned above where
-possible, not generic reasoning about the topic in the abstract.
-"""
+CRITICAL DISTINCTION: Some of this text may be an INTRODUCTION or PREVIEW that merely LISTS topics
+coming up LATER (e.g. "you'll learn about X and Y" or "we'll cover Z later") - this is NOT the same
+as the concept actually being explained or taught. ONLY ground your question in a concept if it is
+GENUINELY EXPLAINED/TAUGHT in the text above with real detail, not just named in a preview list.
+"""  
 
     prompt = f"""
 Generate ONE {question_type} interview question for a Platform Engineer/DevOps/SRE candidate,

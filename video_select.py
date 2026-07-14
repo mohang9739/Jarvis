@@ -349,7 +349,7 @@ def run_video_select():
         16: ["Jenkins CI/CD pipeline fundamentals", "GitHub Actions CI/CD automation workflows"],
     }
 
-    ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
     week_number, topic = get_current_week_topic()
 

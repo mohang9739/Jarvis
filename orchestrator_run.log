@@ -242,3 +242,24 @@ To https://github.com/mohang9739/devops-learning-journal.git
 === Orchestrator run completed at Mon Jul 13 03:01:16 UTC 2026 ===
 Mon Jul 13 04:15:43 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
 Mon Jul 13 12:56:56 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+/home/ubuntu/jarvis/orchestrator.py:63: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+/home/ubuntu/jarvis/orchestrator.py:34: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+To https://github.com/mohang9739/devops-learning-journal.git
+   8ed5f94..ba17bda  master -> master
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+[orchestrator] Current time falls in night shift's likely sleep window - report will still post, but this is logged for future scheduling refinement.
+[quiz_gen] Generated 6 questions for Linux Basics - commands, file system navigation, permissions, and processes
+[orchestrator] Quiz questions generated
+[daily_task] Discord message sent successfully
+[orchestrator] Daily task list sent to Discord
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - The candidate has only completed assessments for a single foundational topic (Linux Basics). While their performance on this specific topic is generally strong, readiness for Platform Engineer/DevOps/SRE roles at companies like Razorpay or Swiggy requires solid mastery across a much broader range of foundational and intermediate topics, including Bash, Networking, Cloud platforms, Docker, Kubernetes, CI/CD, Infrastructure as Code (Terraform), and System Design. The current progress represents a very early stage in a 21-week roadmap, making the candidate not yet ready to apply.
+[reporter] Report posted successfully
+[journal_export] Successfully pushed entry for 2026-07-14
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}, 'daily_task': {'ran': True, 'error': None}}
+=== Orchestrator run completed at Tue Jul 14 03:01:38 UTC 2026 ===
+Tue Jul 14 06:39:05 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown
+Tue Jul 14 09:40:59 UTC 2026: Manual start detected (TriggerType=None) - skipping auto-orchestration/shutdown

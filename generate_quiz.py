@@ -19,11 +19,17 @@ def generate_daily_quiz():
     transcript = plan.data[0]["transcript_segment"]
 
     # Check if questions already generated today
+    # Always regenerate if called after transcript save
+    import sys
+    force = '--force' in sys.argv
     existing = supabase.table("quiz_sessions").select("id").eq(
         "topic", topic).eq("status", "pending").execute()
-    if existing.data:
+    if existing.data and not force:
         print(f"[quiz_gen] Questions already exist for {topic}")
         return
+    elif existing.data and force:
+        supabase.table("quiz_sessions").delete().eq("topic", topic).eq("status", "pending").execute()
+        print(f"[quiz_gen] Cleared old questions, regenerating from real transcript")
 
     prompt = f"""Generate 6 quiz questions based on this Linux tutorial content.
 Topic: {topic}

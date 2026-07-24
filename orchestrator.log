@@ -1,0 +1,17 @@
+/home/ubuntu/jarvis/orchestrator.py:63: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow()
+[orchestrator] Starting daily run - shift: night, study_status: pending, Monday: False, Friday: False
+/home/ubuntu/jarvis/orchestrator.py:34: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+[quiz_gen] No transcript found for today
+[orchestrator] Quiz questions generated
+[daily_task] Discord message sent successfully
+[orchestrator] Daily task list sent to Discord
+[orchestrator] Skipping Video Select - not Monday
+[orchestrator] Skipping Interview Set - not Friday
+[job_scan] Not yet surfacing jobs - The candidate has only covered a small fraction (2 distinct topics) of the 21-week roadmap, focusing solely on very basic Linux and command-line operations. Job readiness for Platform Engineer/DevOps/SRE roles at companies like Razorpay requires solid performance across a much broader set of foundational and intermediate topics, including networking, scripting, cloud platforms, Docker, Kubernetes, CI/CD, IaC (Terraform), and system design. While most individual scores are passing, there is a notable inconsistency with one failed attempt (score of 1) in Linux Basics, and several scores are at the minimum passing threshold (7). This indicates that the candidate is very early in their learning journey and lacks the breadth and consistent depth of knowledge required for these roles.
+[reporter] Report posted successfully
+To https://github.com/mohang9739/devops-learning-journal.git
+   5409800..151beaa  master -> master
+[journal_export] Successfully pushed entry for 2026-07-23
+[orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': False, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}, 'daily_task': {'ran': True, 'error': None}}

@@ -11,6 +11,7 @@ from interview_engine import run_weekly_interview_set
 from journal_export import run_journal_export
 from health_engine import get_current_shift, get_today_study_status
 from daily_task import send_daily_tasks
+from daily_azure_task import send_daily_message
 from generate_quiz import generate_daily_quiz
 
 
@@ -23,6 +24,7 @@ def get_module_status_summary() -> dict:
         "reporter": {"ran": False, "error": None},
         "journal_export": {"ran": False, "error": None},
         "daily_task": {"ran": False, "error": None},
+        "azure_task": {"ran": False, "error": None},
     }
 
 
@@ -81,6 +83,7 @@ def run_daily_orchestration():
     # --- Daily Task List: runs every day FIRST ---
     try:
         send_daily_tasks()
+        send_daily_message()
         status["daily_task"]["ran"] = True
         print("[orchestrator] Daily task list sent to Discord")
     except Exception as e:

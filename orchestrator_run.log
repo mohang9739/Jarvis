@@ -52,9 +52,9 @@ Week 1/8 | Friday
 [video_select] Week 8 (Resume update ATS keywords GitHub link add) not yet cleared - quiz_passed=False, interview_cleared=False. Repeating this week.
 [interview_engine] No transcript content available - using topic-based reasoning
 [orchestrator] Interview set generated for week 8: AI Tools for DevOps - Copilot, Cursor, CLI agents to accelerate infra-as-code and scripting work
-[job_scan] Not yet surfacing jobs - The candidate has only covered 2 very foundational topics (Linux Basics and Command Line Operations) out of a comprehensive 21-week roadmap. Job readiness for Platform Engineer/DevOps/SRE roles at companies like Razorpay requires solid performance across a majority of foundational and intermediate topics, including areas like networking, scripting, cloud, containers (Docker/Kubernetes), CI/CD, IaC (Terraform), and system design, none of which appear to have been started. While performance in the covered topics is moderate (average score of 7 with some strong scores, but also one very low score), it is far too early in the roadmap to consider them ready to start applying.
+[job_scan] Job scan starts August 25. 31 days remaining. Focus on studying!
 [reporter] Report posted successfully
 To https://github.com/mohang9739/devops-learning-journal.git
-   8e0288b..0bea42b  master -> master
+   0bea42b..9adc90e  master -> master
 [journal_export] Successfully pushed entry for 2026-07-24
 [orchestrator] Daily run complete. Status: {'video_select': {'ran': False, 'error': None}, 'interview_set': {'ran': True, 'error': None}, 'job_scan': {'ran': True, 'error': None}, 'reporter': {'ran': True, 'error': None}, 'journal_export': {'ran': True, 'error': None}, 'daily_task': {'ran': True, 'error': None}, 'azure_task': {'ran': False, 'error': None}}

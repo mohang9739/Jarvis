@@ -3,127 +3,127 @@ import requests
 from datetime import datetime, timedelta
 from db_client import supabase
 from ai_client import ask_ai
+from resume_builder import generate_full_resume
 
 DISCORD_WEBHOOK = os.getenv('DISCORD_WEBHOOK_URL')
+SALARY = '14-15 LPA'
 
-CANDIDATE_PROFILE = """
-Name: Mohan G
-Experience: 4.6 years Azure Cloud Infrastructure at Accenture
-Certifications: AZ-140 Azure Virtual Desktop Specialty, AI-102 Azure AI Engineer, AZ-900
-Location: Bengaluru, Karnataka
-Available: October 1, 2026
-Salary expectation: 14-15 LPA
+def analyze_job(title: str, company: str, jd: str, resume: str = "") -> str:
+    prompt = f"""ATS analysis for Azure Cloud Engineer application.
 
-Current Skills:
-- Azure Virtual Desktop (AVD) - 4.6 years
-- FSLogix profile management
-- Entra ID / Azure AD
-- Azure Monitor and Log Analytics
-- BMC Helix ITSM
+CANDIDATE RESUME:
+{resume[:2000] if resume else """
+Mohan G | AZ-140, AI-102, AZ-900
+4.6 years Azure at Accenture
+Terraform, PowerShell, AVD, FSLogix
+Hub-Spoke VNet, Private Endpoints, Key Vault
+Managed Identity, GitHub Actions, KQL
+Azure Monitor, Log Analytics
+Azure Infrastructure Automation Suite project
+- 4hrs to 18min AVD provisioning
+- 40% cost saving
+- Zero public exposure
+"""}
 
-Building Skills (8-week roadmap):
-- Terraform IaC
-- PowerShell scripting
-- Hub-Spoke VNet topology
-- Private Endpoints
-- Azure Key Vault
-- Managed Identity
-- GitHub Actions CI/CD
+JOB: {title} at {company}
+JD: {jd[:1000]}
 
-Project: Azure Infrastructure Automation Suite
-- Reduced AVD provisioning from 4+ hours to 18 minutes using Terraform
-- PowerShell health monitor auto-drains unhealthy AVD hosts
-- Azure OpenAI with Private Endpoint zero public exposure
-- GitHub: github.com/mohang9739/azure-infra-automation
+Score the resume against the JD.
+Respond in exactly this format:
+ATS SCORE: X%
+MATCHED: keyword1, keyword2, keyword3, keyword4, keyword5
+MISSING: keyword1, keyword2 (or None if all matched)
+COVER LETTER (80 words): [write here]
+WHY JOIN (50 words): [write here]
+Q1: [interview question from JD] → A: [answer using candidate project]
+Q2: [interview question from JD] → A: [answer using candidate project]
+Q3: [interview question from JD] → A: [answer using candidate project]
+RECOMMENDATION: Apply immediately / Apply today / Skip"""
+    return ask_ai(prompt)
 
-Signature line:
-"Reduced AVD provisioning from 4+ hours to 18 minutes using Terraform automation"
-"""
+def send_job_package(job: dict):
+    title = job.get('title', '')
+    company = job.get('company', '')
+    jd = job.get('description', '')
+    url = job.get('url', '')
+    salary = job.get('salary', 'Not listed')
+    match_pct = job.get('match_pct', 0)
+    tier = job.get('tier', '')
 
-def analyze_job(job_description: str) -> str:
-    prompt = f"""You are a career coach helping an Azure Cloud Engineer apply for jobs.
+    print(f'[job_apply] Generating package for {title} at {company}...')
 
-CANDIDATE PROFILE:
-{CANDIDATE_PROFILE}
-
-JOB DESCRIPTION:
-{job_description}
-
-Generate exactly this format:
-
-MATCH SCORE: X%
-
-MATCHED KEYWORDS:
-- keyword1
-- keyword2
-- keyword3
-
-MISSING KEYWORDS:
-- keyword1
-- keyword2
-
-TAILORED RESUME BULLETS:
-- [bullet 1 - specific to this job using candidate metrics]
-- [bullet 2 - specific to this job using candidate metrics]
-
-COVER LETTER (80 words max):
-[Write cover letter here]
-
-WHY JOIN ANSWER (50 words):
-[Write why join answer here]
-
-TOP 3 INTERVIEW QUESTIONS FROM THIS JD:
-1. [Question] → Your answer: [Answer using candidate project]
-2. [Question] → Your answer: [Answer using candidate project]
-3. [Question] → Your answer: [Answer using candidate project]
-
-Keep everything specific to the candidate profile. Use real metrics."""
-
-    response = ask_ai(prompt)
-    return response
-
-def send_job_analysis(job_description: str):
-    print('[job_apply] Analyzing job description...')
-    analysis = analyze_job(job_description)
+    # Generate full tailored resume first
+    resume = generate_full_resume(title, company, jd, SALARY)
     
-    message = f"""━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 JOB APPLICATION PACKAGE
+    # Generate ATS analysis using the tailored resume
+    analysis = analyze_job(title, company, jd, resume)
+
+    # Resume already generated above
+
+    # Message 1: Job header + ATS analysis
+    msg1 = f"""━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 JOB MATCH — {tier}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
+**{title} — {company}**
+💰 Salary: {salary}
+📊 Match: {match_pct}%
+🔗 Apply: {url[:100]}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
 {analysis}
 
-🔥 ALWAYS ADD THIS SIGNATURE LINE:
-"Reduced AVD provisioning from 4+ hours
-to 18 minutes using Terraform automation"
+🔥 SIGNATURE LINE (always add):
+"Reduced AVD provisioning from 4+ hours to 18 minutes using Terraform automation"
+━━━━━━━━━━━━━━━━━━━━━━━━━"""
 
-⚠️ FOR MISSING SKILLS ADD:
-"Currently strengthening [skill] knowledge
-as part of continuous learning"
+    # Message 2: Complete tailored resume
+    msg2 = f"""━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 TAILORED RESUME — {company}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{resume}
 ━━━━━━━━━━━━━━━━━━━━━━━━━"""
 
     if DISCORD_WEBHOOK:
-        # Split if too long
-        if len(message) > 2000:
-            parts = [message[i:i+1900] for i in range(0, len(message), 1900)]
+        # Send analysis
+        if len(msg1) > 1900:
+            parts = [msg1[i:i+1900] for i in range(0, len(msg1), 1900)]
             for part in parts:
                 requests.post(DISCORD_WEBHOOK, json={'content': part})
         else:
-            requests.post(DISCORD_WEBHOOK, json={'content': message})
-        print('[job_apply] Analysis sent to Discord')
+            requests.post(DISCORD_WEBHOOK, json={'content': msg1})
+
+        # Send resume
+        if len(msg2) > 1900:
+            parts = [msg2[i:i+1900] for i in range(0, len(msg2), 1900)]
+            for part in parts:
+                requests.post(DISCORD_WEBHOOK, json={'content': part})
+        else:
+            requests.post(DISCORD_WEBHOOK, json={'content': msg2})
+
+        print(f'[job_apply] Full package sent for {title} at {company}')
     else:
-        print(message)
+        print(msg1)
+        print(msg2)
 
 if __name__ == '__main__':
-    # Test with sample JD
-    test_jd = """
-    Azure Cloud Engineer - Bengaluru
-    
-    Requirements:
-    - 3-6 years Azure infrastructure experience
-    - Terraform or ARM templates
-    - Azure Virtual Desktop (AVD) experience preferred
-    - PowerShell scripting
-    - Azure networking (VNet, NSG, Private Endpoints)
-    - Azure Monitor and Log Analytics
-    - AZ-104 or AZ-140 certification preferred
-    """
-    send_job_analysis(test_jd)
+    test_job = {
+        'title': 'Azure Cloud Engineer',
+        'company': 'Wipro',
+        'description': '''
+        4-6 years Azure infrastructure experience
+        Terraform IaC required
+        Azure Virtual Desktop experience preferred
+        PowerShell scripting automation
+        Azure networking VNet NSG Private Endpoints
+        Azure Monitor Log Analytics KQL
+        AZ-140 preferred
+        Hub-Spoke topology
+        Key Vault secrets management
+        ''',
+        'url': 'https://wipro.com/careers/123',
+        'salary': '12-16 LPA',
+        'match_pct': 87,
+        'tier': '🔥 Tier 1'
+    }
+    send_job_package(test_job)
